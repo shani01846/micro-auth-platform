@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול מוצרים</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page { display: none; width: 100%; }
+        .page.active { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+
+        /* ---- Auth Page ---- */
+        .auth-box {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            width: 380px;
+            overflow: hidden;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            color: #888;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            color: #1a73e8;
+            border-bottom: 2px solid #1a73e8;
+            background: #f8f9ff;
+        }
+
+        .auth-form { padding: 28px; }
+
+        .auth-form h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 4px;
+        }
+
+        .btn-primary:hover { background: #1557b0; }
+
+        .error-msg {
+            background: #fdecea;
+            color: #c62828;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-top: 14px;
+            display: none;
+        }
+
+        /* ---- App Page ---- */
+        .app-layout {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: #1a73e8;
+            color: white;
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .navbar-brand { font-size: 18px; font-weight: 700; }
+
+        .navbar-right { display: flex; align-items: center; gap: 16px; }
+
+        .user-badge {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 13px;
+        }
+
+        .role-badge {
+            background: #fbbc04;
+            color: #333;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover { background: rgba(255,255,255,0.25); }
+
+        .main-content {
+            flex: 1;
+            padding: 32px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        /* ---- Products Grid ---- */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .product-icon { font-size: 36px; margin-bottom: 10px; }
+
+        .product-name { font-size: 16px; font-weight: 600; color: #333; }
+
+        .product-price {
+            font-size: 18px;
+            color: #1a73e8;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #aaa;
+            padding: 60px 0;
+            font-size: 16px;
+        }
+
+        /* ---- Add Product Form ---- */
+        .add-product-card {
+            background: white;
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            max-width: 420px;
+        }
+
+        .success-msg {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-top: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== AUTH PAGE ===== -->
+<div class="page active" id="authPage">
+    <div class="auth-box">
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login')">התחברות</button>
+            <button class="auth-tab" onclick="switchTab('register')">הרשמה</button>
+        </div>
+
+        <!-- Login Form -->
+        <div class="auth-form" id="loginForm">
+            <h2>ברוך הבא 👋</h2>
+            <div class="form-group">
+                <label>שם משתמש</label>
+                <input type="text" id="loginUsername" placeholder="הכנס שם משתמש">
+            </div>
+            <div class="form-group">
+                <label>סיסמה</label>
+                <input type="password" id="loginPassword" placeholder="הכנס סיסמה" onkeydown="if(event.key==='Enter') doLogin()">
+            </div>
+            <button class="btn-primary" onclick="doLogin()">התחבר</button>
+            <div class="error-msg" id="loginError"></div>
+        </div>
+
+        <!-- Register Form -->
+        <div class="auth-form" id="registerForm" style="display:none">
+            <h2>יצירת חשבון חדש</h2>
+            <div class="form-group">
+                <label>שם משתמש</label>
+                <input type="text" id="regUsername" placeholder="בחר שם משתמש">
+            </div>
+            <div class="form-group">
+                <label>סיסמה</label>
+                <input type="password" id="regPassword" placeholder="בחר סיסמה">
+            </div>
+            <div class="form-group">
+                <label>תפקיד</label>
+                <select id="regRole">
+                    <option value="ADMIN">מנהל (ADMIN) - הוספת מוצרים</option>
+                    <option value="PERSON">משתמש (PERSON) - צפייה במוצרים</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="doRegister()">הירשם</button>
+            <div class="error-msg" id="registerError"></div>
+            <div class="success-msg" id="registerSuccess">נרשמת בהצלחה! כעת ניתן להתחבר.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== APP PAGE ===== -->
+<div class="page" id="appPage">
+    <div class="app-layout">
+        <nav class="navbar">
+            <div class="navbar-brand">🛍️ מערכת ניהול מוצרים</div>
+            <div class="navbar-right">
+                <span class="user-badge" id="navUsername"></span>
+                <span class="role-badge" id="navRole"></span>
+                <button class="btn-logout" onclick="doLogout()">התנתקות</button>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <!-- ADMIN VIEW -->
+            <div id="adminView" style="display:none">
+                <div class="section-title">➕ הוספת מוצר חדש</div>
+                <div class="add-product-card">
+                    <div class="form-group">
+                        <label>שם המוצר</label>
+                        <input type="text" id="prodName" placeholder="הכנס שם מוצר">
+                    </div>
+                    <div class="form-group">
+                        <label>מחיר (₪)</label>
+                        <input type="number" id="prodPrice" placeholder="הכנס מחיר" min="0">
+                    </div>
+                    <button class="btn-primary" onclick="doAddProduct()">הוסף מוצר</button>
+                    <div class="error-msg" id="addProductError"></div>
+                    <div class="success-msg" id="addProductSuccess"></div>
+                </div>
+            </div>
+
+            <!-- PERSON VIEW -->
+            <div id="personView" style="display:none">
+                <div class="section-title">📦 רשימת מוצרים</div>
+                <div class="products-grid" id="productsGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = '';
+
+    // ---- Tab switching ----
+    function switchTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach((t, i) => {
+            t.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1));
+        });
+        document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+        document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+        hideErrors();
+    }
+
+    function hideErrors() {
+        document.querySelectorAll('.error-msg, .success-msg').forEach(el => el.style.display = 'none');
+    }
+
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    // ---- Auth guard on load ----
+    window.onload = () => {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        const username = localStorage.getItem('username');
+        if (token && role && username) {
+            showApp(username, role);
+        }
+    };
+
+    // ---- Login ----
+    async function doLogin() {
+        hideErrors();
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        if (!username || !password) return showError('loginError', 'נא למלא את כל השדות');
+
+        try {
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('role', data.role);
+                localStorage.setItem('username', username);
+                showApp(username, data.role);
+            } else {
+                showError('loginError', data.message || 'שם משתמש או סיסמה שגויים');
+            }
+        } catch {
+            showError('loginError', 'שגיאת תקשורת עם השרת');
+        }
+    }
+
+    // ---- Register ----
+    async function doRegister() {
+        hideErrors();
+        const username = document.getElementById('regUsername').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const role = document.getElementById('regRole').value;
+        if (!username || !password) return showError('registerError', 'נא למלא את כל השדות');
+
+        try {
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, role })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                document.getElementById('registerSuccess').style.display = 'block';
+                setTimeout(() => switchTab('login'), 1500);
+            } else {
+                showError('registerError', data.message || 'ההרשמה נכשלה');
+            }
+        } catch {
+            showError('registerError', 'שגיאת תקשורת עם השרת');
+        }
+    }
+
+    // ---- Show app after login ----
+    function showApp(username, role) {
+        document.getElementById('authPage').classList.remove('active');
+        document.getElementById('appPage').classList.add('active');
+        document.getElementById('navUsername').textContent = username;
+        document.getElementById('navRole').textContent = role;
+
+        if (role === 'ADMIN') {
+            document.getElementById('adminView').style.display = 'block';
+            document.getElementById('personView').style.display = 'none';
+        } else {
+            document.getElementById('adminView').style.display = 'none';
+            document.getElementById('personView').style.display = 'block';
+            loadProducts();
+        }
+    }
+
+    // ---- Logout ----
+    function doLogout() {
+        localStorage.clear();
+        document.getElementById('appPage').classList.remove('active');
+        document.getElementById('authPage').classList.add('active');
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        switchTab('login');
+    }
+
+    // ---- Load Products (PERSON) ----
+    async function loadProducts() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/products', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const products = await res.json();
+            const grid = document.getElementById('productsGrid');
+            if (!products.length) {
+                grid.innerHTML = '<div class="empty-state">אין מוצרים להצגה כרגע</div>';
+                return;
+            }
+            grid.innerHTML = products.map(p => `
+                <div class="product-card">
+                    <div class="product-icon">📦</div>
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">₪${p.price.toFixed(2)}</div>
+                </div>
+            `).join('');
+        } catch {
+            document.getElementById('productsGrid').innerHTML = '<div class="empty-state">שגיאה בטעינת המוצרים</div>';
+        }
+    }
+
+    // ---- Add Product (ADMIN) ----
+    async function doAddProduct() {
+        hideErrors();
+        const token = localStorage.getItem('token');
+        const name = document.getElementById('prodName').value.trim();
+        const price = parseFloat(document.getElementById('prodPrice').value);
+        if (!name || isNaN(price) || price < 0) return showError('addProductError', 'נא למלא שם ומחיר תקין');
+
+        try {
+            const res = await fetch('/products/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ name, price })
+            });
+            if (res.ok) {
+                const el = document.getElementById('addProductSuccess');
+                el.textContent = `המוצר "${name}" נוסף בהצלחה!`;
+                el.style.display = 'block';
+                document.getElementById('prodName').value = '';
+                document.getElementById('prodPrice').value = '';
+                setTimeout(() => el.style.display = 'none', 3000);
+            } else {
+                showError('addProductError', 'הוספת המוצר נכשלה');
+            }
+        } catch {
+            showError('addProductError', 'שגיאת תקשורת עם השרת');
+        }
+    }
+</script>
+</body>
+</html>
