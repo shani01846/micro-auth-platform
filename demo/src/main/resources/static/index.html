@@ -58,12 +58,47 @@
         
         .btn-login { background-color: #17a2b8; }
         .btn-login:hover { background-color: #138496; }
+        
+        .btn-delete { background-color: #dc3545; }
+        .btn-delete:hover { background-color: #c82333; }
+        
+        .btn-view { background-color: #6c757d; }
+        .btn-view:hover { background-color: #5a6268; }
 
         .message {
             margin-top: 15px;
             font-weight: bold;
             color: #555;
             min-height: 20px;
+        }
+        
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        
+        .product-info {
+            flex-grow: 1;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
@@ -97,6 +132,17 @@
             <input type="number" id="loginId" placeholder="הכנס מזהה משתמש (ID)">
             <button class="btn-login" onclick="loginUser()">התחבר</button>
             <div id="loginMsg" class="message"></div>
+        </div>
+
+        <div class="card">
+            <h2>🛡️ ניהול מוצרים - Admin</h2>
+            <button class="btn-view" onclick="loadProducts()">הצג את כל המוצרים</button>
+            <div id="productsList" style="margin: 15px 0; max-height: 200px; overflow-y: auto;"></div>
+            <hr>
+            <input type="number" id="deleteProductId" placeholder="מזהה מוצר למחיקה">
+            <button class="btn-delete" onclick="deleteSpecificProduct()">מחק מוצר ספציפי</button>
+            <button class="btn-delete" onclick="deleteAllProducts()">מחק את כל המוצרים</button>
+            <div id="adminMsg" class="message"></div>
         </div>
 
     </div>
@@ -180,6 +226,104 @@
             .catch(() => {
                 msgDiv.style.color = "red";
                 msgDiv.innerText = "משתמש לא נמצא או שגיאת שרת.";
+            });
+        }
+
+        // 4. פונקציות Admin - ניהול מוצרים
+        function loadProducts() {
+            fetch('/products')
+            .then(res => res.json())
+            .then(products => {
+                const listDiv = document.getElementById('productsList');
+                if (products.length === 0) {
+                    listDiv.innerHTML = '<p style="color: #999;">אין מוצרים במערכת</p>';
+                    return;
+                }
+                
+                let html = '<div>';
+                products.forEach(product => {
+                    html += `<div class="product-item">`;
+                    html += `<div class="product-info">`;
+                    html += `<strong>ID:</strong> ${product.id} | <strong>שם:</strong> ${product.name} | <strong>מחיר:</strong> ₪${product.price}`;
+                    html += `</div>`;
+                    html += `<button class="delete-btn" onclick="deleteProductById(${product.id}, '${product.name}')">מחק</button>`;
+                    html += `</div>`;
+                });
+                html += '</div>';
+                listDiv.innerHTML = html;
+            })
+            .catch(() => {
+                document.getElementById('productsList').innerHTML = '<p style="color: red;">שגיאה בטעינת המוצרים</p>';
+            });
+        }
+
+        function deleteProductById(productId, productName) {
+            if (!confirm(`האם את בטוחה שברצונך למחוק את המוצר "${productName}"?`)) {
+                return;
+            }
+
+            fetch(`/products/${productId}`, { method: 'DELETE' })
+            .then(res => {
+                const msgDiv = document.getElementById('adminMsg');
+                if (res.ok) {
+                    msgDiv.style.color = "green";
+                    msgDiv.innerText = `המוצר "${productName}" נמחק בהצלחה!`;
+                    loadProducts();
+                } else {
+                    msgDiv.style.color = "red";
+                    msgDiv.innerText = `שגיאה במחיקת המוצר "${productName}"`;
+                }
+            })
+            .catch(() => {
+                document.getElementById('adminMsg').style.color = "red";
+                document.getElementById('adminMsg').innerText = "שגיאה במחיקת המוצר";
+            });
+        }
+
+        function deleteSpecificProduct() {
+            const id = document.getElementById('deleteProductId').value;
+            const msgDiv = document.getElementById('adminMsg');
+            
+            if (!id) {
+                msgDiv.style.color = "red";
+                msgDiv.innerText = "נא להזין מזהה מוצר";
+                return;
+            }
+
+            fetch(`/products/${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    msgDiv.style.color = "green";
+                    msgDiv.innerText = `מוצר מספר ${id} נמחק בהצלחה!`;
+                    document.getElementById('deleteProductId').value = '';
+                    loadProducts(); // רענון הרשימה
+                } else {
+                    msgDiv.style.color = "red";
+                    msgDiv.innerText = `מוצר מספר ${id} לא נמצא`;
+                }
+            })
+            .catch(() => {
+                msgDiv.style.color = "red";
+                msgDiv.innerText = "שגיאה במחיקת המוצר";
+            });
+        }
+
+        function deleteAllProducts() {
+            if (!confirm('האם אתה בטוח שברצונך למחוק את כל המוצרים?')) {
+                return;
+            }
+
+            fetch('/products/all', { method: 'DELETE' })
+            .then(res => res.text())
+            .then(message => {
+                const msgDiv = document.getElementById('adminMsg');
+                msgDiv.style.color = "green";
+                msgDiv.innerText = message;
+                loadProducts(); // רענון הרשימה
+            })
+            .catch(() => {
+                document.getElementById('adminMsg').style.color = "red";
+                document.getElementById('adminMsg').innerText = "שגיאה במחיקת המוצרים";
             });
         }
     </script>
